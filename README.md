@@ -2,6 +2,8 @@
 
 Production-like multi-node Kubernetes cluster on Multipass using kubeadm. Full control-plane access for learning, debugging, and experimentation without managed cluster cost.
 
+![klabctl banner](assets/klabctl-banner.png)
+
 Project CLI: `./klabctl.sh`
 
 ## Prerequisites
