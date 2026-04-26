@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+
+# Generated local kubeconfig from setup
+kubeconfig-*.yaml
+*-hosts
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
