@@ -31,6 +31,13 @@ References:
 
 ## Quick Start
 
+### Step 0: Clone this repository
+
+```bash
+git clone https://github.com/SkaleKontrol/klabctl.git
+cd klabctl
+```
+
 ### Step 1: Install Multipass (requires sudo, run manually)
 
 ```bash
