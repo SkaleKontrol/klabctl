@@ -6,6 +6,24 @@ Production-like multi-node Kubernetes cluster on Multipass using kubeadm. Full c
 
 Project CLI: `./klabctl.sh`
 
+## Why klabctl?
+
+There are already great local Kubernetes tools like Minikube, kind, k3d, MicroK8s, and Rancher Desktop.
+
+`klabctl` is for a different use case: a production-like kubeadm lab on local VMs with full node-level access.
+
+Use `klabctl` when you want to:
+
+- Practice kubeadm-style cluster operations on separate control-plane and worker nodes
+- Prepare for certification-level hands-on scenarios (for example CKA/CKS-style troubleshooting and ops tasks)
+- Study and validate observability stacks (Prometheus/Grafana/Loki/OTel, etc.) in a production-like multi-node lab
+- Debug real node/network/runtime issues (containerd, CNI, kubelet, certs, join flows)
+- Simulate multi-node and HA topologies (`1cp/1worker`, `3cp/2worker`, etc.)
+- Keep full VM-level control (shell access, restart nodes, inspect OS/systemd/network state)
+
+If you only need a lightweight local cluster for app dev testing, kind/k3d/Minikube can be faster.  
+If you need deeper, production-like cluster behavior and troubleshooting practice, `klabctl` fits better.
+
 ## Prerequisites
 
 - Ubuntu 24.04+ (or similar)
