@@ -74,6 +74,7 @@ chmod +x klabctl.sh
 
 `klabctl.sh create` prints estimated total vCPU/RAM for the requested node counts and asks for confirmation before creating VMs.
 Control-plane and worker per-node resources can be increased at create time using `--cp-*` and `--worker-*` flags.
+`create` currently installs Kubernetes `v1.36`.
 
 ### Create Options
 
