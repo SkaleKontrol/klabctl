@@ -8,7 +8,7 @@ Project CLI: `./klabctl.sh`
 
 ## Prerequisites
 
-- Ubuntu 26.04 (or similar)
+- Ubuntu 24.04+ (or similar)
 - KVM enabled
 - `kubectl` installed on host (required for host-side commands like `kubectl get nodes`)
   - Install docs: [Install and Set Up kubectl on Linux](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
