@@ -1,0 +1,16 @@
+Source: klabctl
+Section: admin
+Priority: optional
+Maintainer: Umesh G <gaikwadumesh123@gmail.com>
+Rules-Requires-Root: no
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Homepage: https://github.com/SkaleKontrol/klabctl
+
+Package: klabctl
+Architecture: all
+Depends: ${misc:Depends}, bash
+Description: multi-node Kubernetes labs on Multipass
+ klabctl creates production-like kubeadm clusters on local Multipass
+ VMs. The default Kubernetes minor is 1.36. Targeted minors are 1.35,
+ 1.36, and 1.37.

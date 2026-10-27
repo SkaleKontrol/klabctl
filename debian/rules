@@ -1,0 +1,23 @@
+#!/usr/bin/make -f
+
+# Source-only packing works before debhelper is installed locally.
+# Launchpad build machines have dh and take the first branch.
+ifeq ($(shell command -v dh),)
+
+clean:
+	rm -rf debian/.debhelper debian/klabctl debian/files \
+		debian/*.substvars debian/debhelper-build-stamp
+
+build build-arch build-indep binary binary-arch binary-indep:
+	@echo "debhelper is required to build the binary package" >&2
+	@exit 1
+
+else
+
+%:
+	dh $@
+
+override_dh_auto_build:
+override_dh_auto_test:
+
+endif

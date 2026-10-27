@@ -1,0 +1,5 @@
+tar-ignore = .git
+tar-ignore = .cursor
+tar-ignore = msg.asc
+tar-ignore = .venv
+tar-ignore = __pycache__

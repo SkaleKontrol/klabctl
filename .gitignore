@@ -9,3 +9,13 @@ kubeconfig-*.yaml
 # OS/editor noise
 .DS_Store
 Thumbs.db
+
+# Launchpad OpenPGP confirmation mail (local only)
+msg.asc
+
+# Debian build products
+debian/.debhelper/
+debian/debhelper-build-stamp
+debian/files
+debian/*.substvars
+debian/klabctl/

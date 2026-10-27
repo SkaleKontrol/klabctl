@@ -136,7 +136,7 @@ run_parallel_for_nodes() {
 usage() {
   cat <<EOF
 Usage:
-  ./klabctl.sh create <cluster-name> [--control-planes N] [--workers N]
+  klabctl create <cluster-name> [--control-planes N] [--workers N]
     [--k8s-version VERSION]
     [--cp-cpus N] [--cp-memory SIZE] [--cp-disk SIZE]
     [--worker-cpus N] [--worker-memory SIZE] [--worker-disk SIZE]
@@ -150,12 +150,12 @@ Defaults:
   worker-cpus: ${WORKER_VCPU}, worker-memory: ${WORKER_RAM}, worker-disk: ${WORKER_DISK}
 
 Examples:
-  ./klabctl.sh create k8s
-  ./klabctl.sh create <cluster-name>
-  ./klabctl.sh create <cluster-name> --control-planes 3 --workers 2
-  ./klabctl.sh create <cluster-name> --k8s-version 1.35
-  ./klabctl.sh create <cluster-name> --k8s-version 1.36.5
-  ./klabctl.sh create <cluster-name> --cp-cpus 4 --cp-memory 4G --cp-disk 30G --worker-cpus 2 --worker-memory 4G --worker-disk 30G
+  klabctl create k8s
+  klabctl create <cluster-name>
+  klabctl create <cluster-name> --control-planes 3 --workers 2
+  klabctl create <cluster-name> --k8s-version 1.35
+  klabctl create <cluster-name> --k8s-version 1.36.5
+  klabctl create <cluster-name> --cp-cpus 4 --cp-memory 4G --cp-disk 30G --worker-cpus 2 --worker-memory 4G --worker-disk 30G
 EOF
 }
 
@@ -242,7 +242,12 @@ init_nodes() {
   done
   NODES=("${CP_NODES[@]}" "${WORKER_NODES[@]}")
   CP1="${CP_NODES[0]}"
-  HOST_KUBECONFIG="$REPO_ROOT/kubeconfig-${CLUSTER_NAME}.yaml"
+  # A system install under /usr is not a writable project directory.
+  if [[ -w "$REPO_ROOT" ]]; then
+    HOST_KUBECONFIG="$REPO_ROOT/kubeconfig-${CLUSTER_NAME}.yaml"
+  else
+    HOST_KUBECONFIG="$PWD/kubeconfig-${CLUSTER_NAME}.yaml"
+  fi
 }
 
 confirm_resource_requirements() {

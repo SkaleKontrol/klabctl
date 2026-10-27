@@ -1,0 +1,6 @@
+klabctl.sh usr/lib/klabctl
+VERSION usr/lib/klabctl
+scripts/cluster/common.sh usr/lib/klabctl/scripts/cluster
+scripts/cluster/create.sh usr/lib/klabctl/scripts/cluster
+scripts/cluster/lifecycle.sh usr/lib/klabctl/scripts/cluster
+scripts/cluster/refresh.sh usr/lib/klabctl/scripts/cluster

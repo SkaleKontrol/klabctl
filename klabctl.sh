@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Resolve symlinks so /usr/bin/klabctl can point at /usr/lib/klabctl/klabctl.sh.
+_src="${BASH_SOURCE[0]}"
+while [[ -L "$_src" ]]; do
+  _dir="$(cd -P "$(dirname "$_src")" && pwd)"
+  _src="$(readlink "$_src")"
+  [[ "$_src" != /* ]] && _src="$_dir/$_src"
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$_src")" && pwd)"
+unset _src _dir
 source "$SCRIPT_DIR/scripts/cluster/common.sh"
 source "$SCRIPT_DIR/scripts/cluster/refresh.sh"
 source "$SCRIPT_DIR/scripts/cluster/lifecycle.sh"
@@ -9,18 +17,18 @@ source "$SCRIPT_DIR/scripts/cluster/lifecycle.sh"
 usage() {
   cat <<'EOF'
 Usage:
-  ./klabctl.sh list
-  ./klabctl.sh nodes [cluster-name]
-  ./klabctl.sh create <cluster-name> [--control-planes N] [--workers N] \
+  klabctl list
+  klabctl nodes [cluster-name]
+  klabctl create <cluster-name> [--control-planes N] [--workers N] \
     [--k8s-version VERSION] \
     [--cp-cpus N] [--cp-memory SIZE] [--cp-disk SIZE] \
     [--worker-cpus N] [--worker-memory SIZE] [--worker-disk SIZE]
-  ./klabctl.sh shell <cluster-name> [node-name]
-  ./klabctl.sh start <cluster-name>
-  ./klabctl.sh stop <cluster-name>
-  ./klabctl.sh refresh <cluster-name>
-  ./klabctl.sh delete <cluster-name> [--yes] [--purge]
-  ./klabctl.sh version
+  klabctl shell <cluster-name> [node-name]
+  klabctl start <cluster-name>
+  klabctl stop <cluster-name>
+  klabctl refresh <cluster-name>
+  klabctl delete <cluster-name> [--yes] [--purge]
+  klabctl version
 
 Commands:
   list                   List clusters created by naming convention.
@@ -40,19 +48,19 @@ Options:
   --purge              Run `multipass purge` after delete.
 
 Examples:
-  ./klabctl.sh list
-  ./klabctl.sh nodes
-  ./klabctl.sh nodes <cluster-name>
-  ./klabctl.sh create <cluster-name> --control-planes 3 --workers 2
-  ./klabctl.sh create <cluster-name> --k8s-version 1.35
-  ./klabctl.sh create <cluster-name> --k8s-version 1.36.5
-  ./klabctl.sh shell <cluster-name>
-  ./klabctl.sh shell <cluster-name> <cluster-name>-worker1
-  ./klabctl.sh start <cluster-name>
-  ./klabctl.sh stop <cluster-name>
-  ./klabctl.sh refresh <cluster-name>
-  ./klabctl.sh delete <cluster-name> --yes --purge
-  ./klabctl.sh version
+  klabctl list
+  klabctl nodes
+  klabctl nodes <cluster-name>
+  klabctl create <cluster-name> --control-planes 3 --workers 2
+  klabctl create <cluster-name> --k8s-version 1.35
+  klabctl create <cluster-name> --k8s-version 1.36.5
+  klabctl shell <cluster-name>
+  klabctl shell <cluster-name> <cluster-name>-worker1
+  klabctl start <cluster-name>
+  klabctl stop <cluster-name>
+  klabctl refresh <cluster-name>
+  klabctl delete <cluster-name> --yes --purge
+  klabctl version
 EOF
 }
 
@@ -127,7 +135,7 @@ main() {
       fi
       if ! multipass info "$node" >/dev/null 2>&1; then
         echo "Node '$node' not found."
-        echo "Tip: run './klabctl.sh nodes $cluster' to see available nodes."
+        echo "Tip: run 'klabctl nodes $cluster' to see available nodes."
         exit 1
       fi
       multipass shell "$node"
