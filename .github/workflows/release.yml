@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  push:
+    tags:
+      # Glob filter. The job below requires exactly vMAJOR.MINOR.PATCH.
+      - "v[0-9]*.[0-9]*.[0-9]*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check tag matches VERSION
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Tag ${tag} is not a vMAJOR.MINOR.PATCH release tag."
+            exit 1
+          fi
+          version="${tag#v}"
+          file="$(tr -d '[:space:]' < VERSION)"
+          if [[ "$version" != "$file" ]]; then
+            echo "Tag ${tag} does not match VERSION file (${file})."
+            exit 1
+          fi
+
+      - name: Extract changelog notes
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          awk -v ver="$version" '
+            $0 ~ "^## \\[" ver "\\]" { found=1 }
+            found && /^## \[/ && $0 !~ "^## \\[" ver "\\]" { exit }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          if [[ ! -s release-notes.md ]]; then
+            echo "No changelog section for ${version}."
+            exit 1
+          fi
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create "$GITHUB_REF_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "klabctl ${GITHUB_REF_NAME}" \
+            --notes-file release-notes.md

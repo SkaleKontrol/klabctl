@@ -13,7 +13,13 @@ NODES=()
 CP_NODES=()
 WORKER_NODES=()
 CP1=""
+# Default minor installs the newest patch from that pkgs.k8s.io stable repo.
+# Supported minors track upstream patch support: https://kubernetes.io/releases/
+# When this window changes, follow RELEASING.md (README and CHANGELOG move with it).
 K8S_VERSION="1.36"
+K8S_MINOR=""
+K8S_PACKAGE_SPEC=""
+K8S_SUPPORTED_MINORS="1.35 1.36 1.37"
 # Multipass catalog: bare "26.04" can hit flaky simplestreams ("Remote \"\" is unknown"); prefer explicit image.
 UBUNTU_RELEASE="${UBUNTU_RELEASE:-26.04}"
 MULTIPASS_IMAGE="${MULTIPASS_IMAGE:-}"
@@ -54,6 +60,33 @@ validate_size_arg() {
   if ! [[ "$value" =~ ^[0-9]+([MmGg][Bb]?)?$ ]]; then
     echo "Invalid $label '$value'. Use forms like 1700M, 2G, 4096MB."
     exit 1
+  fi
+}
+
+# Accept 1.36, v1.36, 1.36.5, or v1.36.5.
+# A minor installs the newest patch. A patch pins kubelet/kubeadm/kubectl to that release.
+normalize_k8s_version() {
+  local raw="${1#v}"
+  if [[ ! "$raw" =~ ^1\.([0-9]+)(\.([0-9]+))?$ ]]; then
+    echo "Invalid Kubernetes version '$1'."
+    echo "Use a minor (1.36) or a patch (1.36.5). A leading v is optional."
+    echo "Targeted minors: v1.35, v1.36, and v1.37."
+    exit 1
+  fi
+  local patch="${BASH_REMATCH[3]:-}"
+  K8S_MINOR="1.${BASH_REMATCH[1]}"
+  if [[ -n "$patch" ]]; then
+    K8S_VERSION="$raw"
+    K8S_PACKAGE_SPEC="${raw}-*"
+  else
+    K8S_VERSION="$K8S_MINOR"
+    K8S_PACKAGE_SPEC=""
+  fi
+
+  local supported=" ${K8S_SUPPORTED_MINORS} "
+  if [[ "$supported" != *" ${K8S_MINOR} "* ]]; then
+    echo "Warning: this repo targets Kubernetes v1.35, v1.36, and v1.37."
+    echo "You asked for v${K8S_MINOR}. Install continues when that minor still has a pkgs.k8s.io stable repository."
   fi
 }
 
@@ -103,14 +136,16 @@ run_parallel_for_nodes() {
 usage() {
   cat <<EOF
 Usage:
-  ./klabctl.sh create <cluster-name> [--control-planes N] [--workers N] \
-    [--cp-cpus N] [--cp-memory SIZE] [--cp-disk SIZE] \
+  ./klabctl.sh create <cluster-name> [--control-planes N] [--workers N]
+    [--k8s-version VERSION]
+    [--cp-cpus N] [--cp-memory SIZE] [--cp-disk SIZE]
     [--worker-cpus N] [--worker-memory SIZE] [--worker-disk SIZE]
 
 Defaults:
   cluster-name: ${DEFAULT_CLUSTER_NAME}
   control-planes: ${DEFAULT_CP_COUNT}
   workers: ${DEFAULT_WORKER_COUNT}
+  k8s-version: ${K8S_VERSION} (newest patch; targeted minors: ${K8S_SUPPORTED_MINORS})
   cp-cpus: ${CP_VCPU}, cp-memory: ${CP_RAM}, cp-disk: ${CP_DISK}
   worker-cpus: ${WORKER_VCPU}, worker-memory: ${WORKER_RAM}, worker-disk: ${WORKER_DISK}
 
@@ -118,6 +153,8 @@ Examples:
   ./klabctl.sh create k8s
   ./klabctl.sh create <cluster-name>
   ./klabctl.sh create <cluster-name> --control-planes 3 --workers 2
+  ./klabctl.sh create <cluster-name> --k8s-version 1.35
+  ./klabctl.sh create <cluster-name> --k8s-version 1.36.5
   ./klabctl.sh create <cluster-name> --cp-cpus 4 --cp-memory 4G --cp-disk 30G --worker-cpus 2 --worker-memory 4G --worker-disk 30G
 EOF
 }
@@ -137,6 +174,11 @@ parse_args() {
       --workers)
         WORKER_COUNT="${2:-}"
         [[ -z "$WORKER_COUNT" ]] && { echo "Missing value for --workers"; exit 1; }
+        shift 2
+        ;;
+      --k8s-version)
+        K8S_VERSION="${2:-}"
+        [[ -z "$K8S_VERSION" ]] && { echo "Missing value for --k8s-version"; exit 1; }
         shift 2
         ;;
       --cp-cpus)
@@ -213,6 +255,11 @@ confirm_resource_requirements() {
   echo
   echo "Cluster plan:"
   echo "  Name: $CLUSTER_NAME"
+  if [[ -n "$K8S_PACKAGE_SPEC" ]]; then
+    echo "  Kubernetes: v${K8S_VERSION}"
+  else
+    echo "  Kubernetes: v${K8S_VERSION} (newest patch in this minor)"
+  fi
   echo "  Control-plane nodes: $CP_COUNT (${CP_VCPU} vCPU, ${CP_RAM} RAM, ${CP_DISK} disk each)"
   echo "  Worker nodes:        $WORKER_COUNT (${WORKER_VCPU} vCPU, ${WORKER_RAM} RAM, ${WORKER_DISK} disk each)"
   echo
@@ -344,8 +391,11 @@ launch_worker_vm() {
 # --- Step 2: Install k8s components on all nodes ---
 install_k8s_node() {
   local node=$1
-  log "Installing containerd + kubeadm on $node..."
-  multipass exec "$node" -- sudo env K8S_VERSION="$K8S_VERSION" bash -s << 'K8S_INSTALL'
+  log "Installing containerd + Kubernetes v${K8S_VERSION} on $node..."
+  multipass exec "$node" -- sudo env \
+    K8S_MINOR="$K8S_MINOR" \
+    K8S_PACKAGE_SPEC="$K8S_PACKAGE_SPEC" \
+    bash -s << 'K8S_INSTALL'
 set -e
 # Preflight: ip_forward (conntrack installed via cloud-init)
 echo 'net.ipv4.ip_forward = 1' | sudo tee /etc/sysctl.d/99-kubernetes.conf
@@ -367,10 +417,10 @@ sudo systemctl restart containerd
 
 # K8s
 # Some environments currently fail TLS validation on pkgs.k8s.io; fall back to the CDN URL.
-K8S_KEY_URL_PRIMARY="https://pkgs.k8s.io/core:/stable:/v${K8S_VERSION}/deb/Release.key"
-K8S_REPO_PRIMARY="https://pkgs.k8s.io/core:/stable:/v${K8S_VERSION}/deb/"
-K8S_KEY_URL_FALLBACK="https://prod-cdn.packages.k8s.io/repositories/isv:/kubernetes:/core:/stable:/v${K8S_VERSION}/deb/Release.key"
-K8S_REPO_FALLBACK="https://prod-cdn.packages.k8s.io/repositories/isv:/kubernetes:/core:/stable:/v${K8S_VERSION}/deb/"
+K8S_KEY_URL_PRIMARY="https://pkgs.k8s.io/core:/stable:/v${K8S_MINOR}/deb/Release.key"
+K8S_REPO_PRIMARY="https://pkgs.k8s.io/core:/stable:/v${K8S_MINOR}/deb/"
+K8S_KEY_URL_FALLBACK="https://prod-cdn.packages.k8s.io/repositories/isv:/kubernetes:/core:/stable:/v${K8S_MINOR}/deb/Release.key"
+K8S_REPO_FALLBACK="https://prod-cdn.packages.k8s.io/repositories/isv:/kubernetes:/core:/stable:/v${K8S_MINOR}/deb/"
 K8S_KEY_TMP="$(mktemp)"
 
 if curl -fsSL "$K8S_KEY_URL_PRIMARY" -o "$K8S_KEY_TMP" && sudo gpg --dearmor --batch --yes --no-tty -o /usr/share/keyrings/kubernetes-apt-keyring.gpg "$K8S_KEY_TMP"; then
@@ -384,7 +434,14 @@ else
 fi
 rm -f "$K8S_KEY_TMP"
 sudo apt-get update -qq
-sudo apt-get install -y kubelet kubeadm kubectl
+if [[ -n "${K8S_PACKAGE_SPEC}" ]]; then
+  sudo apt-get install -y \
+    "kubelet=${K8S_PACKAGE_SPEC}" \
+    "kubeadm=${K8S_PACKAGE_SPEC}" \
+    "kubectl=${K8S_PACKAGE_SPEC}"
+else
+  sudo apt-get install -y kubelet kubeadm kubectl
+fi
 sudo apt-mark hold kubelet kubeadm kubectl
 K8S_INSTALL
 }
@@ -509,6 +566,7 @@ configure_host_kubeconfig() {
 # --- Main ---
 main() {
   parse_args "$@"
+  normalize_k8s_version "$K8S_VERSION"
 
   if [[ ! "$CLUSTER_NAME" =~ ^[a-z0-9-]+$ ]]; then
     echo "Invalid cluster name '$CLUSTER_NAME'. Use lowercase letters, numbers, and hyphens only."

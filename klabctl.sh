@@ -12,6 +12,7 @@ Usage:
   ./klabctl.sh list
   ./klabctl.sh nodes [cluster-name]
   ./klabctl.sh create <cluster-name> [--control-planes N] [--workers N] \
+    [--k8s-version VERSION] \
     [--cp-cpus N] [--cp-memory SIZE] [--cp-disk SIZE] \
     [--worker-cpus N] [--worker-memory SIZE] [--worker-disk SIZE]
   ./klabctl.sh shell <cluster-name> [node-name]
@@ -19,18 +20,22 @@ Usage:
   ./klabctl.sh stop <cluster-name>
   ./klabctl.sh refresh <cluster-name>
   ./klabctl.sh delete <cluster-name> [--yes] [--purge]
+  ./klabctl.sh version
 
 Commands:
   list                   List clusters created by naming convention.
   nodes [cluster-name]   List cluster nodes (or all nodes when omitted).
-  create <cluster-name>  Create cluster.
+  create <cluster-name>  Create cluster (default Kubernetes v1.36).
   shell <cluster-name>   Open shell in a node (default: <cluster-name>-cp1).
   start <cluster-name>   Start one cluster's VMs only.
   stop <cluster-name>    Stop one cluster's VMs only.
   refresh <cluster-name> Refresh kubeconfig and hosts files for cluster.
   delete <cluster-name>  Delete one cluster's VMs only.
+  version                Print the klabctl version.
 
 Options:
+  --k8s-version VER    Kubernetes minor (1.36) or patch (1.36.5). Default: 1.36.
+                       Targeted minors: 1.35, 1.36, 1.37. A leading v is optional.
   --yes                Skip delete confirmation prompt.
   --purge              Run `multipass purge` after delete.
 
@@ -39,19 +44,44 @@ Examples:
   ./klabctl.sh nodes
   ./klabctl.sh nodes <cluster-name>
   ./klabctl.sh create <cluster-name> --control-planes 3 --workers 2
+  ./klabctl.sh create <cluster-name> --k8s-version 1.35
+  ./klabctl.sh create <cluster-name> --k8s-version 1.36.5
   ./klabctl.sh shell <cluster-name>
   ./klabctl.sh shell <cluster-name> <cluster-name>-worker1
   ./klabctl.sh start <cluster-name>
   ./klabctl.sh stop <cluster-name>
   ./klabctl.sh refresh <cluster-name>
   ./klabctl.sh delete <cluster-name> --yes --purge
+  ./klabctl.sh version
 EOF
 }
 
+klabctl_version() {
+  local version_file="$SCRIPT_DIR/VERSION"
+  if [[ ! -f "$version_file" ]]; then
+    echo "klabctl version file missing: $version_file" >&2
+    exit 1
+  fi
+  local version
+  version="$(tr -d '[:space:]' < "$version_file")"
+  if [[ -z "$version" ]]; then
+    echo "klabctl version file is empty: $version_file" >&2
+    exit 1
+  fi
+  echo "klabctl $version"
+}
+
 main() {
+  local cmd="${1:-help}"
+  case "$cmd" in
+    version)
+      klabctl_version
+      return
+      ;;
+  esac
+
   require_multipass
 
-  local cmd="${1:-help}"
   case "$cmd" in
     list)
       cmd_list

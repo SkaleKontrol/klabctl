@@ -6,6 +6,8 @@ Production-like multi-node Kubernetes cluster on Multipass using kubeadm. Full c
 
 Project CLI: `./klabctl.sh`
 
+Current release: [v0.1.0](https://github.com/SkaleKontrol/klabctl/releases/tag/v0.1.0). `./klabctl.sh version` prints the version of the checkout. Maintainers cut releases with [RELEASING.md](RELEASING.md).
+
 ## Why klabctl?
 
 There are already great local Kubernetes tools like Minikube, kind, k3d, MicroK8s, and Rancher Desktop.
@@ -47,13 +49,47 @@ References:
 - [Multipass Requirements](https://documentation.ubuntu.com/multipass/latest/explanation/requirements/)
 - [How to check KVM support (Ubuntu docs)](https://help.ubuntu.com/community/KVM/Installation)
 
+## Kubernetes version
+
+`create` installs the same Kubernetes release on every node (`kubelet`, `kubeadm`, and `kubectl`).
+
+| Setting | Value |
+|---|---|
+| Default | `1.36` (newest patch in the 1.36 package repository) |
+| Targeted minors | `1.35`, `1.36`, `1.37` |
+
+These match the Kubernetes releases that still receive upstream patches. Current status is on the [Kubernetes releases](https://kubernetes.io/releases/) page.
+
+```bash
+# Newest patch of a minor. Default is 1.36.
+./klabctl.sh create <cluster-name> --k8s-version 1.35
+
+# Pin a patch. A leading v is optional (1.36.5 and v1.36.5 are the same).
+./klabctl.sh create <cluster-name> --k8s-version 1.36.5
+./klabctl.sh create <cluster-name> --k8s-version v1.37.1
+```
+
+- A minor such as `1.35` uses the [`pkgs.k8s.io`](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/) stable repository for that minor and installs the newest `kubelet`, `kubeadm`, and `kubectl` packages in it.
+- A patch such as `1.36.5` installs packages matching `1.36.5-*` and holds them with `apt-mark hold`.
+- The version is chosen at create time. To run a different release, create another cluster, or delete this one and create it again with a new `--k8s-version`.
+- Other `1.y` minors use the same flag. `klabctl` prints a warning when the minor is outside `1.35`–`1.37`, then continues if that minor still has a published stable repository.
+
+Host `kubectl` talks to the API server on your machine. Install a host `kubectl` within one minor of the cluster version ([version skew policy](https://kubernetes.io/releases/version-skew-policy/)). For a `1.36` cluster, host `kubectl` `1.35`, `1.36`, or `1.37` is in range. Matching the cluster minor (`1.36.x`) is the closest fit.
+
 ## Quick Start
 
 ### Step 0: Clone this repository
 
+`main` tracks current development. A tag such as `v0.1.0` is a fixed release. Published versions are on the [GitHub Releases](https://github.com/SkaleKontrol/klabctl/releases) page.
+
 ```bash
 git clone https://github.com/SkaleKontrol/klabctl.git
 cd klabctl
+
+# Stay on main, or pin a release:
+git checkout v0.1.0
+
+./klabctl.sh version
 ```
 
 ### Step 1: Install Multipass (requires sudo, run manually)
@@ -86,6 +122,12 @@ chmod +x klabctl.sh
 # Minimum node counts
 ./klabctl.sh create <cluster-name> --control-planes 1 --workers 1
 
+# Newest patch of Kubernetes 1.35 (default is 1.36)
+./klabctl.sh create <cluster-name> --k8s-version 1.35
+
+# Pin patch 1.36.5 on every node
+./klabctl.sh create <cluster-name> --k8s-version 1.36.5
+
 # Default baseline profile (matches prerequisites above)
 ./klabctl.sh create <cluster-name> \
   --control-planes 1 --workers 1 \
@@ -101,7 +143,7 @@ chmod +x klabctl.sh
 
 `klabctl.sh create` prints estimated total vCPU/RAM for the requested node counts and asks for confirmation before creating VMs.
 Control-plane and worker per-node resources can be increased at create time using `--cp-*` and `--worker-*` flags.
-`create` currently installs Kubernetes `v1.36`.
+The default Kubernetes version is `1.36`. Pass `--k8s-version` to select another minor or patch. See [Kubernetes version](#kubernetes-version).
 
 ### Create Options
 
@@ -109,6 +151,7 @@ Control-plane and worker per-node resources can be increased at create time usin
 
 - `--control-planes N`: number of control-plane nodes (min: `1`)
 - `--workers N`: number of worker nodes (min: `1`)
+- `--k8s-version VERSION`: Kubernetes minor (`1.36`, `v1.36`) or patch (`1.36.5`, `v1.36.5`). Default: `1.36` (newest patch). Targeted minors: `1.35`, `1.36`, `1.37`
 - `--cp-cpus N`: vCPUs per control-plane node (min: `2`)
 - `--cp-memory SIZE`: RAM per control-plane node (min: `1700M`, examples: `4G`, `4096MB`)
 - `--cp-disk SIZE`: disk per control-plane node (example: `10G`, `30G`)
