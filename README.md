@@ -4,6 +4,8 @@ Production-like multi-node Kubernetes cluster on Multipass using kubeadm. Full c
 
 ![klabctl banner](assets/klabctl-banner.png)
 
+Site: [klabctl.skalekontrol.com](https://klabctl.skalekontrol.com/)
+
 Project CLI: `./klabctl.sh`
 
 Current release: [v0.1.0](https://github.com/SkaleKontrol/klabctl/releases/tag/v0.1.0). `./klabctl.sh version` prints the version of the checkout. Maintainers cut releases with [RELEASING.md](RELEASING.md).
@@ -28,7 +30,9 @@ If you need deeper, production-like cluster behavior and troubleshooting practic
 
 ## Prerequisites
 
-- Ubuntu 24.04+ (or similar)
+- A host that can run Multipass with KVM:
+  - Ubuntu 24.04 or newer
+  - Debian, Linux Mint, Pop!_OS, or another Linux with the same virtualization support
 - KVM enabled
 - `kubectl` installed on host (required for host-side commands like `kubectl get nodes`)
   - Install docs: [Install and Set Up kubectl on Linux](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
@@ -75,6 +79,19 @@ These match the Kubernetes releases that still receive upstream patches. Current
 - Other `1.y` minors use the same flag. `klabctl` prints a warning when the minor is outside `1.35`–`1.37`, then continues if that minor still has a published stable repository.
 
 Host `kubectl` talks to the API server on your machine. Install a host `kubectl` within one minor of the cluster version ([version skew policy](https://kubernetes.io/releases/version-skew-policy/)). For a `1.36` cluster, host `kubectl` `1.35`, `1.36`, or `1.37` is in range. Matching the cluster minor (`1.36.x`) is the closest fit.
+
+## Install klabctl
+
+The `.deb` only depends on `bash`. It installs on Ubuntu 24.04 or newer and on other dpkg systems such as Debian, Linux Mint, and Pop!_OS.
+
+```bash
+curl -fsSL -o /tmp/klabctl.deb \
+  https://ppa.launchpadcontent.net/skalekontrol/klabctl/ubuntu/pool/main/k/klabctl/klabctl_0.1.0_all.deb
+sudo apt install -y /tmp/klabctl.deb
+klabctl version
+```
+
+On a Linux host that does not use dpkg, use the git checkout in the next section and run `./klabctl.sh`.
 
 ## Quick Start
 

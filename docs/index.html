@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>klabctl — local Kubernetes labs</title>
+  <meta name="description" content="klabctl creates production-like multi-node Kubernetes clusters on Multipass with kubeadm. Full control-plane access on your machine.">
+  <link rel="canonical" href="https://klabctl.skalekontrol.com/">
+  <meta property="og:title" content="klabctl — local Kubernetes labs">
+  <meta property="og:description" content="Production-like multi-node Kubernetes clusters on Multipass. Build, break, learn, repeat.">
+  <meta property="og:url" content="https://klabctl.skalekontrol.com/">
+  <meta property="og:image" content="https://klabctl.skalekontrol.com/klabctl-banner.png">
+  <meta name="theme-color" content="#070b14">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%235b4dff'/%3E%3Ctext x='32' y='44' text-anchor='middle' font-family='Arial' font-size='36' font-weight='700' fill='white'%3EK%3C/text%3E%3C/svg%3E">
+  <style>
+    :root {
+      --bg: #070b14;
+      --bg-raise: #101826;
+      --line: #243044;
+      --text: #e8eef8;
+      --muted: #93a0b5;
+      --green: #3ddc84;
+      --purple: #7c6bff;
+      --blue: #4c8dff;
+      --amber: #ffb020;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background:
+        radial-gradient(900px 420px at 10% -10%, rgba(91, 77, 255, 0.28), transparent 60%),
+        radial-gradient(700px 380px at 100% 0%, rgba(61, 220, 132, 0.12), transparent 55%),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+    }
+    a { color: var(--green); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    header, main, footer { width: min(1080px, calc(100% - 32px)); margin-inline: auto; }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 22px 0 8px;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; }
+    .mark {
+      width: 42px; height: 42px; border-radius: 12px;
+      display: grid; place-items: center;
+      background: linear-gradient(160deg, #7a6bff, #4d3dff);
+      font-weight: 800; letter-spacing: -0.04em;
+    }
+    .brand strong { font-size: 1.15rem; letter-spacing: -0.03em; }
+    nav { display: flex; gap: 18px; color: var(--muted); font-size: 0.95rem; }
+    nav a { color: var(--muted); }
+    .hero { padding: 48px 0 20px; }
+    .eyebrow { color: var(--green); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; font-size: 0.82rem; }
+    h1 { font-size: clamp(2.4rem, 6vw, 4.4rem); line-height: 0.95; letter-spacing: -0.045em; margin: 10px 0 14px; }
+    .lede { max-width: 640px; color: var(--muted); font-size: 1.15rem; margin: 0 0 24px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      border-radius: 999px; padding: 12px 18px; font-weight: 700;
+      border: 1px solid transparent;
+    }
+    .btn.primary { background: var(--green); color: #062214; }
+    .btn.primary:hover { text-decoration: none; filter: brightness(1.05); }
+    .btn.ghost { border-color: var(--line); color: var(--text); background: transparent; }
+    .btn.ghost:hover { text-decoration: none; border-color: var(--muted); }
+    figure { margin: 28px 0 8px; }
+    figure img { width: 100%; height: auto; border-radius: 18px; border: 1px solid var(--line); display: block; }
+    section { padding: 42px 0; }
+    h2 { font-size: 1.7rem; letter-spacing: -0.03em; margin: 0 0 8px; }
+    .sub { color: var(--muted); margin: 0 0 22px; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .card {
+      background: rgba(16, 24, 38, 0.85);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px;
+    }
+    .card h3 { margin: 0 0 6px; font-size: 1.02rem; }
+    .card p { margin: 0; color: var(--muted); }
+    pre {
+      margin: 0;
+      padding: 18px 18px 16px;
+      overflow: auto;
+      background: #0c121c;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      color: #d5deea;
+      font-family: ui-monospace, "Cascadia Code", "SFMono-Regular", Menlo, Consolas, monospace;
+      font-size: 0.92rem;
+      line-height: 1.55;
+    }
+    .comment { color: #7d8ba0; }
+    .prompt { color: var(--green); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid var(--line); }
+    th { color: var(--muted); font-weight: 600; font-size: 0.85rem; }
+    footer {
+      display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+      padding: 28px 0 40px; color: var(--muted); border-top: 1px solid var(--line);
+    }
+    @media (max-width: 800px) {
+      nav { display: none; }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="brand" href="https://klabctl.skalekontrol.com/">
+      <span class="mark">K</span>
+      <strong>klabctl</strong>
+    </a>
+    <nav>
+      <a href="#install">Install</a>
+      <a href="#create">Create</a>
+      <a href="#kubernetes">Kubernetes</a>
+      <a href="https://github.com/SkaleKontrol/klabctl">GitHub</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <p class="eyebrow">Build. Break. Learn. Repeat.</p>
+      <h1>Local Kubernetes labs with full node access.</h1>
+      <p class="lede">klabctl creates production-like multi-node clusters on Multipass with kubeadm. Separate control-plane and worker VMs, Calico, and a kubeconfig on your machine. No managed cluster cost.</p>
+      <div class="actions">
+        <a class="btn primary" href="#install">Install klabctl</a>
+        <a class="btn ghost" href="https://github.com/SkaleKontrol/klabctl">View on GitHub</a>
+      </div>
+      <figure>
+        <img src="klabctl-banner.png" alt="klabctl creates a multi-node kubeadm cluster: three control-plane nodes, two workers, and Calico.">
+      </figure>
+    </section>
+
+    <section>
+      <h2>A lab, not a toy cluster</h2>
+      <p class="sub">Use kind or Minikube when you only need to run an app. Use klabctl when you want the node, the join flow, and the control plane.</p>
+      <div class="grid">
+        <article class="card">
+          <h3>One command</h3>
+          <p><code>klabctl create</code> launches the VMs, installs containerd and kubeadm, initializes the control plane, joins the nodes, and installs Calico.</p>
+        </article>
+        <article class="card">
+          <h3>Real nodes</h3>
+          <p>Control-plane and worker counts are yours. A 3 control-plane, 2 worker lab is a create flag, not a diagram.</p>
+        </article>
+        <article class="card">
+          <h3>Shell on every VM</h3>
+          <p>Inspect kubelet, certificates, containerd, and systemd. Restart a node. Practice the failures managed clusters hide.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="install">
+      <h2>Install</h2>
+      <p class="sub">The package only depends on bash. One <code>.deb</code> installs on Ubuntu 24.04 or newer, Debian, Linux Mint, Pop!_OS, and other dpkg systems. On any other Linux that can run Multipass, clone the repo.</p>
+      <pre><span class="comment"># Ubuntu 24.04+, Debian, Mint, Pop!_OS</span>
+curl -fsSL -o /tmp/klabctl.deb \
+  https://ppa.launchpadcontent.net/skalekontrol/klabctl/ubuntu/pool/main/k/klabctl/klabctl_0.1.0_all.deb
+<span class="prompt">sudo</span> apt install -y /tmp/klabctl.deb
+klabctl version
+
+<span class="comment"># Any other Linux with Multipass</span>
+git clone https://github.com/SkaleKontrol/klabctl.git
+cd klabctl
+chmod +x klabctl.sh
+./klabctl.sh version</pre>
+    </section>
+
+    <section id="create">
+      <h2>Create a cluster</h2>
+      <p class="sub">Multipass and host <code>kubectl</code> need to be installed first. The default cluster is one control plane and one worker, Kubernetes 1.36.</p>
+      <pre><span class="comment"># Default lab</span>
+klabctl create k8s
+
+<span class="comment"># High-availability lab. Sizes are per node.</span>
+klabctl create lab \
+  --control-planes 3 --workers 2 \
+  --cp-cpus 2 --cp-memory 4G --cp-disk 20G \
+  --worker-cpus 2 --worker-memory 4G --worker-disk 20G
+
+kubectl get nodes</pre>
+    </section>
+
+    <section id="kubernetes">
+      <h2>Kubernetes versions</h2>
+      <p class="sub">The same release is installed on every node. Pick a minor for its newest patch, or pin a patch.</p>
+      <table>
+        <thead>
+          <tr><th>Setting</th><th>Value</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Default</td><td>1.36, newest patch</td></tr>
+          <tr><td>Targeted minors</td><td>1.35, 1.36, 1.37</td></tr>
+        </tbody>
+      </table>
+      <pre>klabctl create lab --k8s-version 1.35
+klabctl create lab --k8s-version 1.36.5</pre>
+    </section>
+  </main>
+
+  <footer>
+    <span>klabctl by <a href="https://github.com/SkaleKontrol">SkaleKontrol</a></span>
+    <span><a href="https://github.com/SkaleKontrol/klabctl">GitHub</a> · <a href="https://github.com/SkaleKontrol/klabctl/releases">Releases</a> · <a href="https://launchpad.net/~skalekontrol/+archive/ubuntu/klabctl">PPA</a></span>
+  </footer>
+</body>
+</html>
