@@ -98,6 +98,12 @@
     }
     .comment { color: #7d8ba0; }
     .prompt { color: var(--green); }
+    .jump { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 0 0 28px; }
+    .jump a { color: var(--muted); }
+    .command { margin: 0 0 32px; }
+    .command h3 { margin: 0 0 6px; font-size: 1.15rem; letter-spacing: -0.02em; }
+    .command p { margin: 0 0 12px; color: var(--muted); }
+    .command pre + p { margin-top: 12px; }
     table { width: 100%; border-collapse: collapse; }
     th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid var(--line); }
     th { color: var(--muted); font-weight: 600; font-size: 0.85rem; }
@@ -106,7 +112,8 @@
       padding: 28px 0 40px; color: var(--muted); border-top: 1px solid var(--line);
     }
     @media (max-width: 800px) {
-      nav { display: none; }
+      header { flex-wrap: wrap; }
+      nav { flex-wrap: wrap; gap: 12px 16px; }
       .grid { grid-template-columns: 1fr; }
     }
   </style>
@@ -119,7 +126,7 @@
     </a>
     <nav>
       <a href="#install">Install</a>
-      <a href="#create">Create</a>
+      <a href="#commands">Commands</a>
       <a href="#kubernetes">Kubernetes</a>
       <a href="https://github.com/SkaleKontrol/klabctl">GitHub</a>
     </nav>
@@ -160,25 +167,104 @@
 
     <section id="install">
       <h2>Install</h2>
-      <p class="sub">Ubuntu 24.04 or newer, and Ubuntu-based systems such as Linux Mint and Pop!_OS.</p>
-      <pre><span class="prompt">sudo</span> add-apt-repository --yes ppa:skalekontrol/klabctl
+      <p class="sub">Ubuntu 24.04 or newer, and Ubuntu-based systems such as Linux Mint and Pop!_OS. The package does not install Multipass. Install that separately. KVM has to be enabled.</p>
+      <pre><span class="comment"># klabctl</span>
+<span class="prompt">sudo</span> add-apt-repository --yes ppa:skalekontrol/klabctl
 <span class="prompt">sudo</span> apt update
-<span class="prompt">sudo</span> apt install klabctl</pre>
+<span class="prompt">sudo</span> apt install klabctl
+
+<span class="comment"># Multipass runs the cluster VMs</span>
+<span class="prompt">sudo</span> snap install multipass</pre>
+      <p class="sub">Install <a href="https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/">kubectl on the host</a> before <code>kubectl get nodes</code>. For the default 1.36 cluster, host kubectl 1.35, 1.36, or 1.37 is in range.</p>
     </section>
 
-    <section id="create">
-      <h2>Create a cluster</h2>
-      <p class="sub">Multipass and host <code>kubectl</code> need to be installed first. The default cluster is one control plane and one worker, Kubernetes 1.36.</p>
-      <pre><span class="comment"># Default lab</span>
+    <section id="commands">
+      <h2>Commands</h2>
+      <p class="sub">Examples use a cluster named <code>k8s</code>. Its VMs are <code>k8s-cp1</code>, <code>k8s-worker1</code>, and so on. Multipass has to be installed before any command except <code>version</code>.</p>
+      <p class="jump">
+        <a href="#cmd-list">list</a>
+        <a href="#cmd-nodes">nodes</a>
+        <a href="#cmd-create">create</a>
+        <a href="#cmd-shell">shell</a>
+        <a href="#cmd-start">start</a>
+        <a href="#cmd-stop">stop</a>
+        <a href="#cmd-refresh">refresh</a>
+        <a href="#cmd-delete">delete</a>
+        <a href="#cmd-version">version</a>
+      </p>
+
+      <div class="command" id="cmd-list">
+        <h3>List clusters</h3>
+        <p><code>list</code> prints clusters created with the klabctl naming convention, and how many of their VMs are running.</p>
+        <pre>klabctl list</pre>
+      </div>
+
+      <div class="command" id="cmd-nodes">
+        <h3>List nodes</h3>
+        <p>Without a name, <code>nodes</code> lists every Multipass VM. With a name, it lists only that cluster.</p>
+        <pre>klabctl nodes
+klabctl nodes k8s</pre>
+      </div>
+
+      <div class="command" id="cmd-create">
+        <h3>Create a cluster</h3>
+        <p>The default lab is one control plane and one worker, Kubernetes 1.36, 2 vCPU, 4G RAM, and 10G disk on each node. Host <code>kubectl</code> needs to be installed. Create writes <code>kubeconfig-k8s.yaml</code>, merges it into <code>~/.kube/config</code>, and switches the current context to <code>k8s</code>.</p>
+        <pre><span class="comment"># Default lab</span>
 klabctl create k8s
 
-<span class="comment"># High-availability lab. Sizes are per node.</span>
+<span class="comment"># Three control planes and two workers</span>
+klabctl create lab --control-planes 3 --workers 2
+
+<span class="comment"># Sizes are per node</span>
 klabctl create lab \
   --control-planes 3 --workers 2 \
   --cp-cpus 2 --cp-memory 4G --cp-disk 20G \
   --worker-cpus 2 --worker-memory 4G --worker-disk 20G
 
 kubectl get nodes</pre>
+      </div>
+
+      <div class="command" id="cmd-shell">
+        <h3>Shell into a node</h3>
+        <p><code>shell</code> opens a shell on a cluster VM. The default node is <code>&lt;cluster&gt;-cp1</code>. Pass a node name to open a worker or another control plane.</p>
+        <pre><span class="comment"># Shell on the first control plane</span>
+klabctl shell k8s
+
+<span class="comment"># Shell on a worker</span>
+klabctl shell k8s k8s-worker1</pre>
+      </div>
+
+      <div class="command" id="cmd-start">
+        <h3>Start a cluster</h3>
+        <p><code>start</code> boots that cluster’s VMs, then refreshes kubeconfig and the hosts file because the IP addresses can change.</p>
+        <pre>klabctl start k8s</pre>
+      </div>
+
+      <div class="command" id="cmd-stop">
+        <h3>Stop a cluster</h3>
+        <p><code>stop</code> shuts down that cluster’s VMs and leaves every other Multipass VM alone.</p>
+        <pre>klabctl stop k8s</pre>
+      </div>
+
+      <div class="command" id="cmd-refresh">
+        <h3>Refresh kubeconfig</h3>
+        <p>After a restart, the control-plane IP may have changed. <code>refresh</code> rewrites <code>kubeconfig-k8s.yaml</code> from <code>k8s-cp1</code> and writes <code>k8s-hosts</code> with the current addresses.</p>
+        <pre>klabctl refresh k8s</pre>
+      </div>
+
+      <div class="command" id="cmd-delete">
+        <h3>Delete a cluster</h3>
+        <p><code>delete</code> removes that cluster’s VMs, its context from <code>~/.kube/config</code>, <code>kubeconfig-k8s.yaml</code>, and <code>k8s-hosts</code>. It asks before deleting. <code>--yes</code> skips the prompt. <code>--purge</code> reclaims disk from deleted Multipass instances.</p>
+        <pre>klabctl delete k8s
+klabctl delete k8s --yes --purge</pre>
+      </div>
+
+      <div class="command" id="cmd-version">
+        <h3>Version and help</h3>
+        <p><code>version</code> prints the installed klabctl release and does not need Multipass.</p>
+        <pre>klabctl version
+klabctl help</pre>
+      </div>
     </section>
 
     <section id="kubernetes">
