@@ -160,18 +160,10 @@
 
     <section id="install">
       <h2>Install</h2>
-      <p class="sub">The package only depends on bash. One <code>.deb</code> installs on Ubuntu 24.04 or newer, Debian, Linux Mint, Pop!_OS, and other dpkg systems. On any other Linux that can run Multipass, clone the repo.</p>
-      <pre><span class="comment"># Ubuntu 24.04+, Debian, Mint, Pop!_OS</span>
-curl -fsSL -o /tmp/klabctl.deb \
-  https://ppa.launchpadcontent.net/skalekontrol/klabctl/ubuntu/pool/main/k/klabctl/klabctl_0.1.0_all.deb
-<span class="prompt">sudo</span> apt install -y /tmp/klabctl.deb
-klabctl version
-
-<span class="comment"># Any other Linux with Multipass</span>
-git clone https://github.com/SkaleKontrol/klabctl.git
-cd klabctl
-chmod +x klabctl.sh
-./klabctl.sh version</pre>
+      <p class="sub">Ubuntu 24.04 or newer, and Ubuntu-based systems such as Linux Mint and Pop!_OS.</p>
+      <pre><span class="prompt">sudo</span> add-apt-repository --yes ppa:skalekontrol/klabctl
+<span class="prompt">sudo</span> apt update
+<span class="prompt">sudo</span> apt install klabctl</pre>
     </section>
 
     <section id="create">

@@ -82,16 +82,15 @@ Host `kubectl` talks to the API server on your machine. Install a host `kubectl`
 
 ## Install klabctl
 
-The `.deb` only depends on `bash`. It installs on Ubuntu 24.04 or newer and on other dpkg systems such as Debian, Linux Mint, and Pop!_OS.
+Ubuntu 24.04 or newer, and Ubuntu-based systems such as Linux Mint and Pop!_OS:
 
 ```bash
-curl -fsSL -o /tmp/klabctl.deb \
-  https://ppa.launchpadcontent.net/skalekontrol/klabctl/ubuntu/pool/main/k/klabctl/klabctl_0.1.0_all.deb
-sudo apt install -y /tmp/klabctl.deb
-klabctl version
+sudo add-apt-repository --yes ppa:skalekontrol/klabctl
+sudo apt update
+sudo apt install klabctl
 ```
 
-On a Linux host that does not use dpkg, use the git checkout in the next section and run `./klabctl.sh`.
+On a Linux host that does not use this PPA, use the git checkout in the next section and run `./klabctl.sh`.
 
 ## Quick Start
 
