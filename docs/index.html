@@ -167,14 +167,14 @@
 
     <section id="install">
       <h2>Install</h2>
-      <p class="sub">Ubuntu 24.04 or newer, and Ubuntu-based systems such as Linux Mint and Pop!_OS. The package does not install Multipass. Install that separately. KVM has to be enabled.</p>
-      <pre><span class="comment"># klabctl</span>
+      <p class="sub">Ubuntu 24.04 or newer, and Ubuntu-based systems such as Linux Mint and Pop!_OS. Install Multipass first. KVM has to be enabled. The <a href="https://documentation.ubuntu.com/multipass/latest/how-to-guides/install-multipass/">Multipass installation guide</a> has the current steps.</p>
+      <pre><span class="comment"># Multipass runs the cluster VMs</span>
+<span class="prompt">sudo</span> snap install multipass
+
+<span class="comment"># klabctl</span>
 <span class="prompt">sudo</span> add-apt-repository --yes ppa:skalekontrol/klabctl
 <span class="prompt">sudo</span> apt update
-<span class="prompt">sudo</span> apt install klabctl
-
-<span class="comment"># Multipass runs the cluster VMs</span>
-<span class="prompt">sudo</span> snap install multipass</pre>
+<span class="prompt">sudo</span> apt install klabctl</pre>
       <p class="sub">Install <a href="https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/">kubectl on the host</a> before <code>kubectl get nodes</code>. For the default 1.36 cluster, host kubectl 1.35, 1.36, or 1.37 is in range.</p>
     </section>
 

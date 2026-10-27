@@ -82,14 +82,14 @@ Host `kubectl` talks to the API server on your machine. Install a host `kubectl`
 
 ## Install klabctl
 
-Ubuntu 24.04 or newer, and Ubuntu-based systems such as Linux Mint and Pop!_OS. The package does not install Multipass. KVM has to be enabled.
+Ubuntu 24.04 or newer, and Ubuntu-based systems such as Linux Mint and Pop!_OS. Install Multipass first. KVM has to be enabled. The [Multipass installation guide](https://documentation.ubuntu.com/multipass/latest/how-to-guides/install-multipass/) has the current steps.
 
 ```bash
+sudo snap install multipass
+
 sudo add-apt-repository --yes ppa:skalekontrol/klabctl
 sudo apt update
 sudo apt install klabctl
-
-sudo snap install multipass
 ```
 
 Install [kubectl on the host](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/) before `kubectl get nodes`. For the default 1.36 cluster, host kubectl 1.35, 1.36, or 1.37 is in range.
